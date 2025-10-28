@@ -242,6 +242,10 @@ const unsubscribe = store.$onAction(
 onMounted(() => {
   store.initTest()
   document.addEventListener('keydown', handleKeyDown)
+  // Calculate initial lines after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    calculateWordsPerLine()
+  }, 100)
 })
 
 onUnmounted(() => {
