@@ -1,5 +1,5 @@
-from database import SessionLocal
-from models import Word, Base
+from app.database import SessionLocal
+from app.models import Word, Base
 from sqlalchemy import inspect
 
 # Якутские слова для тренировки печати
