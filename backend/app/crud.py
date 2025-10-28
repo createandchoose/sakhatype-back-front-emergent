@@ -2,9 +2,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import datetime
 
-import models
-import schemas
-from auth import get_password_hash, verify_password
+from . import models, schemas
+from .auth import get_password_hash, verify_password
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
