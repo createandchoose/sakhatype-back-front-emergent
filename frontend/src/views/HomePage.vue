@@ -278,54 +278,59 @@ onUnmounted(() => {
           {{ timeDisplay }}
         </div>
 
-        <!-- Text Display (Monkeytype-style) -->
+        <!-- Text Display (Monkeytype-style 3-line) -->
         <div class="text-display-wrapper overflow-hidden relative mb-4" style="height: 10rem">
           <div
             ref="textDisplayRef"
             @click="focusInput"
             tabindex="0"
             :class="[
-              'text-3xl leading-relaxed cursor-text select-none font-mono transition-transform duration-200',
+              'text-3xl leading-relaxed cursor-text select-none font-mono',
               isDark ? 'text-gray-600' : 'text-gray-400',
             ]"
-            :style="{
-              transform: `translateY(${lineOffset}px)`,
-            }"
           >
-            <span
-              v-for="(word, wordIdx) in store.words"
-              :key="wordIdx"
-              :class="[
-                'word inline-block relative',
-                wordIdx === store.currentWordIndex && hasFocus && store.isTestActive ? 'word-active' : ''
-              ]"
-              :style="{ marginRight: '0.5rem' }"
+            <!-- Display only 3 lines at a time -->
+            <div 
+              v-for="(lineIndex, displayIndex) in visibleLines" 
+              :key="`line-${lineIndex}`"
+              class="line-container"
+              :style="{ minHeight: '3rem', lineHeight: '3rem' }"
             >
               <span
-                v-for="(char, charIdx) in word"
-                :key="charIdx"
+                v-for="wordIdx in wordsPerLine[lineIndex] || []"
+                :key="`word-${wordIdx}`"
                 :class="[
-                  'char relative inline-block transition-all duration-75',
-                  {
-                    [isDark ? 'text-white' : 'text-gray-900']:
-                      getCharClass(wordIdx, charIdx) === 'correct',
-                    'text-red-500 char-incorrect': getCharClass(wordIdx, charIdx) === 'incorrect',
-                    'char-cursor': getCharClass(wordIdx, charIdx) === 'current',
-                  }
+                  'word inline-block relative',
+                  wordIdx === store.currentWordIndex && hasFocus && store.isTestActive ? 'word-active' : ''
                 ]"
+                :style="{ marginRight: '0.5rem' }"
               >
-                {{ char }}
+                <span
+                  v-for="(char, charIdx) in store.words[wordIdx]"
+                  :key="`char-${wordIdx}-${charIdx}`"
+                  :class="[
+                    'char relative inline-block transition-all duration-75',
+                    {
+                      [isDark ? 'text-white' : 'text-gray-900']:
+                        getCharClass(wordIdx, charIdx) === 'correct',
+                      'text-red-500 char-incorrect': getCharClass(wordIdx, charIdx) === 'incorrect',
+                      'char-cursor': getCharClass(wordIdx, charIdx) === 'current',
+                    }
+                  ]"
+                >
+                  {{ char }}
+                </span>
+                <!-- Показываем лишние символы если их напечатали -->
+                <span
+                  v-if="wordIdx === store.currentWordIndex && store.inputValue.length > store.words[wordIdx].length"
+                  v-for="extraIdx in store.inputValue.length - store.words[wordIdx].length"
+                  :key="`extra-${wordIdx}-${extraIdx}`"
+                  class="char relative inline-block text-red-500 extra-char"
+                >
+                  {{ store.inputValue[store.words[wordIdx].length + extraIdx - 1] }}
+                </span>
               </span>
-              <!-- Показываем лишние символы если их напечатали -->
-              <span
-                v-if="wordIdx === store.currentWordIndex && store.inputValue.length > word.length"
-                v-for="extraIdx in store.inputValue.length - word.length"
-                :key="`extra-${extraIdx}`"
-                class="char relative inline-block text-red-500 extra-char"
-              >
-                {{ store.inputValue[word.length + extraIdx - 1] }}
-              </span>
-            </span>
+            </div>
           </div>
         </div>
 
