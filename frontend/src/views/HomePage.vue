@@ -192,7 +192,7 @@ const handleInput = (event: Event) => {
 
   // Проверяем, перешли ли мы на новое слово
   if (store.currentWordIndex > prevWordIndex) {
-    updateLineOffset()
+    updateVisibleLines()
   }
 }
 
