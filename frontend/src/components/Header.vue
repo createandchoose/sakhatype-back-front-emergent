@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import { userApi } from '@/shared/api'
 import LoginDialog from './LoginDialog.vue'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/shared/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
