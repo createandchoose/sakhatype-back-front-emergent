@@ -1,18 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
-from typing import List
 
-from . import models, schemas, crud
-from .crud import authenticate_user
-from .database import engine, get_db
-from .auth import create_access_token, get_current_username
+from .core.database import Base, engine
+from .features.auth.router import router as auth_router
+from .features.typing.router import router as typing_router
+from .features.user.router import router as user_router
+from .features.leaderboard.router import router as leaderboard_router
 
-models.Base.metadata.create_all(bind=engine)
+# Create all tables
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title='Sakhatype API',
-    version='1.0',
+    version='2.0',
     swagger_ui_parameters={
         "persistAuthorization": True
     }
@@ -27,74 +27,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def hello():
     return {"message": "Sakhatype API үлэлии турар"}
 
-# Auth endpoints
-@app.post('/api/auth/register')
-def register(user: schemas.User, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_username(db, user.username)
-    if db_user:
-        raise HTTPException(
-            status_code=400,
-            detail=f'User with username {user.username} already exists'
-        )
-    return crud.create_user(db, user)
-
-@app.post('/api/auth/login')
-def login(user: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    db_user = authenticate_user(db, user.username, user.password)
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Incorrect username or password',
-            headers={'WWW-Authenticate': 'Bearer'}
-        )
-    access_token = create_access_token(user.username)
-    return {'access_token': access_token, 'token_type': 'bearer', 'username': user.username}
-
-@app.get('/api/users/me')
-def get_current_user_info(username: str = Depends(get_current_username), db: Session = Depends(get_db)):
-    user = crud.get_user_profile(db, username)
-    if not user:
-        raise HTTPException(status_code=404, detail='User not found')
-    return user
-
-# Words endpoint
-@app.get('/api/words')
-def get_words(limit: int = 100, db: Session = Depends(get_db)):
-    return [word[0] for word in crud.get_words(db, limit)]
-
-# Test results endpoints
-@app.post('/api/results', response_model=schemas.TestResultResponse)
-def save_test_result(
-    result: schemas.TestResultCreate, 
-    username: str = Depends(get_current_username),
-    db: Session = Depends(get_db)
-):
-    return crud.create_test_result(db, username, result)
-
-@app.get('/api/results/user/{username}', response_model=List[schemas.TestResultResponse])
-def get_user_results(username: str, limit: int = 50, db: Session = Depends(get_db)):
-    return crud.get_user_results(db, username, limit)
-
-@app.get('/api/profile/{username}', response_model=schemas.UserProfile)
-def get_user_profile(username: str, db: Session = Depends(get_db)):
-    user = crud.get_user_profile(db, username)
-    if not user:
-        raise HTTPException(status_code=404, detail='User not found')
-    return user
-
-# Leaderboard endpoints
-@app.get('/api/leaderboard/wpm', response_model=List[schemas.LeaderboardEntry])
-def get_leaderboard_wpm(limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_leaderboard_wpm(db, limit)
-
-@app.get('/api/leaderboard/accuracy', response_model=List[schemas.LeaderboardEntry])
-def get_leaderboard_accuracy(limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_leaderboard_accuracy(db, limit)
+# Include routers
+app.include_router(auth_router)
+app.include_router(typing_router)
+app.include_router(user_router)
+app.include_router(leaderboard_router)
 
 if __name__ == '__main__':
     import uvicorn
