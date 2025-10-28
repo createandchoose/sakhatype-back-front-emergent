@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Trophy, User, LogOut } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
+import { userApi } from '@/shared/api'
 import LoginDialog from './LoginDialog.vue'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +19,18 @@ import {
 const { isDark } = useTheme()
 const authStore = useAuthStore()
 const router = useRouter()
+const userLevel = ref<number>(1)
+
+onMounted(async () => {
+  if (authStore.isAuthenticated && authStore.username) {
+    try {
+      const profile = await userApi.getUserProfile(authStore.username)
+      userLevel.value = profile.level
+    } catch (error) {
+      console.error('Failed to load user profile:', error)
+    }
+  }
+})
 
 const handleLogout = () => {
   authStore.logout()
