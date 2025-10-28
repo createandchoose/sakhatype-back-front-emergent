@@ -66,6 +66,7 @@ const handleLogout = () => {
           <Button variant="outline" class="flex items-center gap-2 cursor-pointer select-none">
             <User :size="16" />
             <span>{{ authStore.username }}</span>
+            <Badge variant="secondary" class="ml-1">Таһым {{ userLevel }}</Badge>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
