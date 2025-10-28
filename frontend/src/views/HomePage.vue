@@ -3,7 +3,7 @@ import { ref, watch, onMounted, onUnmounted, computed, type Ref } from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
 import { useControlStore } from '@/stores/control'
-import { useTypingStore } from '@/stores/typingStore'
+import { useTypingStore } from '@/stores/typingStore.ts'
 import Control from '@/components/Control.vue'
 import ResultsView from '@/components/ResultsView.vue'
 
