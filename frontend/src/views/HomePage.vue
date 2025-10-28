@@ -105,6 +105,24 @@ const handleInput = (event: Event) => {
   }
 
   const prevWordIndex = store.currentWordIndex
+  const prevInputLength = store.inputValue.length
+  const newInput = target.value
+  
+  // Определяем, был ли добавлен символ
+  if (newInput.length > prevInputLength) {
+    playKeypress()
+    
+    // Проверяем правильность последнего введенного символа
+    const lastChar = newInput[newInput.length - 1]
+    const expectedChar = store.words[store.currentWordIndex]?.[newInput.length - 1]
+    
+    if (lastChar === expectedChar) {
+      playCorrect()
+    } else {
+      playIncorrect()
+    }
+  }
+  
   store.processInput(target.value)
   inputValue.value = store.inputValue
 
