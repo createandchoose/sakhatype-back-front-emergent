@@ -1,319 +1,312 @@
-<template>
-  <div class="results">
-    <h2>Результаты теста</h2>
-
-    <div class="chart-container">
-      <canvas ref="chartCanvas"></canvas>
-    </div>
-
-    <div class="final-stats">
-      <div class="stat-item">
-        <div class="stat-value">{{ stats.wpm }}</div>
-        <div class="stat-label">wpm</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value">{{ stats.accuracy }}%</div>
-        <div class="stat-label">точность</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value">{{ stats.rawWpm }}</div>
-        <div class="stat-label">raw</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value">{{ stats.burstWpm }}</div>
-        <div class="stat-label">burst</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value">{{ stats.totalErrors }}</div>
-        <div class="stat-label">ошибки</div>
-      </div>
-    </div>
-
-    <div class="buttons">
-      <button class="btn" @click="$emit('restart')">↻ еще раз</button>
-      <button class="btn" @click="saveScreenshot">Сохранить скриншот</button>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { Chart, registerables } from 'chart.js'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { RotateCcw, Share2, Check, X } from 'lucide-vue-next'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
+import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '@/stores/auth'
+import { typingApi } from '@/shared/api'
+import { useSound } from '@/shared/composables/useSound'
 import html2canvas from 'html2canvas'
 
-Chart.register(...registerables)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
-const props = defineProps({
-  stats: { type: Object, required: true },
-  wpmHistory: { type: Array, default: () => [] },
-  rawHistory: { type: Array, default: () => [] },
-  burstHistory: { type: Array, default: () => [] },
-  errorTimestamps: { type: Array, default: () => [] },
+interface Props {
+  stats: {
+    wpm: number
+    rawWpm: number
+    accuracy: number
+    burstWpm: number
+    totalErrors: number
+    consistency: number
+    timeMode: number
+    testDuration: number
+  }
+  wpmHistory: number[]
+  rawHistory: number[]
+  burstHistory: number[]
+  errorTimestamps: number[]
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  restart: []
+}>()
+
+const { isDark } = useTheme()
+const authStore = useAuthStore()
+const router = useRouter()
+const { playComplete } = useSound()
+const resultsRef = ref<HTMLElement | null>(null)
+const isSaving = ref(false)
+
+onMounted(() => {
+  playComplete()
+  saveResult()
 })
 
-defineEmits(['restart'])
+async function saveResult() {
+  if (!authStore.isAuthenticated) return
 
-const chartCanvas = ref(null)
-let chartInstance = null
-
-// Функция для сохранения скриншота
-const saveScreenshot = async () => {
   try {
-    const canvasEl = document.querySelector('.results')
-    const screenshot = await html2canvas(canvasEl)
-
-    // Получаем текущее время
-    const now = new Date()
-    const pad = (n) => n.toString().padStart(2, '0')
-    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-    const timeStr = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
-
-    // Формируем динамическое имя файла
-    const fileName = `Sakhatype - ${dateStr} ${timeStr}.png`
-
-    // Создаем ссылку для загрузки файла
-    const link = document.createElement('a')
-    link.href = screenshot.toDataURL()
-    link.download = fileName
-    link.click()
-  } catch (err) {
-    console.error(err)
+    await typingApi.saveTestResult({
+      wpm: props.stats.wpm,
+      raw_wpm: props.stats.rawWpm,
+      accuracy: props.stats.accuracy,
+      burst_wpm: props.stats.burstWpm,
+      total_errors: props.stats.totalErrors,
+      time_mode: props.stats.timeMode,
+      test_duration: props.stats.testDuration,
+      consistency: props.stats.consistency
+    })
+  } catch (error) {
+    console.error('Failed to save result:', error)
   }
 }
 
-onMounted(() => createChart())
-onUnmounted(() => chartInstance?.destroy())
+const wpmChartData = computed(() => ({
+  labels: props.wpmHistory.map((_, i) => `${i}s`),
+  datasets: [
+    {
+      label: 'WPM',
+      data: props.wpmHistory,
+      borderColor: isDark.value ? 'rgb(59, 130, 246)' : 'rgb(37, 99, 235)',
+      backgroundColor: isDark.value ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.1)',
+      tension: 0.4,
+      fill: true,
+      pointRadius: 0,
+      borderWidth: 2,
+    },
+    {
+      label: 'Raw WPM',
+      data: props.rawHistory,
+      borderColor: isDark.value ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)',
+      backgroundColor: 'transparent',
+      tension: 0.4,
+      fill: false,
+      pointRadius: 0,
+      borderWidth: 1.5,
+      borderDash: [5, 5],
+    }
+  ]
+}))
 
-watch(
-  () => [props.wpmHistory, props.rawHistory, props.errorTimestamps, props.burstHistory],
-  () => {
-    if (chartInstance) {
-      chartInstance.destroy()
-      nextTick(createChart)
+const accuracyChartData = computed(() => {
+  const accuracyOverTime = props.wpmHistory.map((_, i) => {
+    const totalChars = (i + 1) * (props.stats.wpm / 5)
+    const errors = props.errorTimestamps.filter(t => t <= i + 1).length
+    return Math.max(0, ((totalChars - errors) / totalChars) * 100)
+  })
+
+  return {
+    labels: accuracyOverTime.map((_, i) => `${i}s`),
+    datasets: [
+      {
+        label: 'Точность (%)',
+        data: accuracyOverTime,
+        borderColor: isDark.value ? 'rgb(34, 197, 94)' : 'rgb(22, 163, 74)',
+        backgroundColor: isDark.value ? 'rgba(34, 197, 94, 0.1)' : 'rgba(22, 163, 74, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 0,
+        borderWidth: 2,
+      }
+    ]
+  }
+})
+
+const chartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      labels: {
+        color: isDark.value ? '#9ca3af' : '#6b7280',
+        font: {
+          size: 12
+        }
+      }
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
     }
   },
-  { deep: true },
-)
-
-const createChart = () => {
-  if (!chartCanvas.value) return
-
-  const ctx = chartCanvas.value.getContext('2d')
-  const labels = props.wpmHistory.map((_, i) => i + 1)
-
-  const errorPoints = labels.map((second) => {
-    const errorsAtThisSecond = props.errorTimestamps.filter((t) => t === second - 1).length
-    return errorsAtThisSecond > 0 ? errorsAtThisSecond : null
-  })
-
-  // Если burstHistory пуст — имитируем динамику на основе пиков WPM
-  const burstData = props.burstHistory.length
-    ? props.burstHistory
-    : props.wpmHistory.map((v, i, arr) => {
-        const prev = arr[i - 1] ?? v
-        const next = arr[i + 1] ?? v
-        return Math.max(v, prev, next)
-      })
-
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'wpm',
-          data: props.wpmHistory,
-          borderColor: '#000000',
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 1,
-          pointHoverRadius: 2,
-          pointBackgroundColor: '#000000',
-        },
-        {
-          label: 'raw',
-          data: props.rawHistory,
-          borderColor: '#666666',
-          backgroundColor: 'rgba(102, 102, 102, 0.05)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 1,
-          pointHoverRadius: 2,
-          pointBackgroundColor: '#666666',
-          borderDash: [5, 5],
-        },
-        {
-          label: 'burst',
-          data: burstData,
-          borderColor: '#84A5A9',
-          backgroundColor: 'rgba(132, 165, 169, 0.15)',
-          borderWidth: 2,
-          tension: 0.35,
-          fill: false,
-          pointRadius: 1,
-          pointHoverRadius: 2,
-          pointBackgroundColor: '#84A5A9',
-        },
-        {
-          label: 'Ошибки',
-          data: errorPoints,
-          borderColor: 'transparent',
-          backgroundColor: '#ff0000',
-          borderWidth: 0,
-          tension: 0,
-          pointRadius: 3,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#ff0000',
-          pointBorderColor: '#ff0000',
-          showLine: false,
-          yAxisID: 'y1',
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            color: '#000000',
-            font: { size: 12, family: "'SF Mono', 'Monaco', monospace" },
-            padding: 15,
-          },
-        },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#000000',
-          bodyColor: '#000000',
-          borderColor: '#666666',
-          borderWidth: 1,
-          padding: 12,
-          callbacks: {
-            title: (ctx) => 'Секунда ' + ctx[0].label,
-            label: (ctx) => {
-              if (ctx.dataset.label === 'Ошибки') return ctx.raw ? `Ошибки: ${ctx.raw}` : null
-              return ctx.dataset.label + ': ' + ctx.raw
-            },
-          },
-          filter: (item) => (item.dataset.label === 'Ошибки' ? item.raw !== null : true),
-        },
+  scales: {
+    x: {
+      grid: {
+        color: isDark.value ? '#374151' : '#e5e7eb',
+        display: false
       },
-      scales: {
-        x: {
-          grid: { color: '#e0e0e0', drawBorder: false },
-          ticks: { color: '#666666', font: { size: 11 } },
-          title: {
-            display: true,
-            text: 'Время (секунды)',
-            color: '#666666',
-            font: { size: 12 },
-          },
-        },
-        y: {
-          type: 'linear',
-          display: true,
-          position: 'left',
-          grid: { color: '#e0e0e0', drawBorder: false },
-          ticks: { color: '#666666', font: { size: 11 } },
-          title: {
-            display: true,
-            text: 'Скорость набора (слов/мин.)',
-            color: '#666666',
-            font: { size: 12 },
-          },
-          beginAtZero: true,
-        },
-        y1: {
-          type: 'linear',
-          display: true,
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          ticks: { color: '#ff0000', font: { size: 11 }, stepSize: 1 },
-          title: {
-            display: true,
-            text: 'Количество ошибок',
-            color: '#ff0000',
-            font: { size: 12 },
-          },
-          beginAtZero: true,
-        },
-      },
+      ticks: {
+        color: isDark.value ? '#9ca3af' : '#6b7280',
+      }
     },
-  })
+    y: {
+      grid: {
+        color: isDark.value ? '#374151' : '#e5e7eb',
+      },
+      ticks: {
+        color: isDark.value ? '#9ca3af' : '#6b7280',
+      }
+    }
+  }
+}))
+
+async function saveScreenshot() {
+  if (!resultsRef.value) return
+
+  try {
+    isSaving.value = true
+    const canvas = await html2canvas(resultsRef.value, {
+      backgroundColor: isDark.value ? '#1f2937' : '#ffffff',
+      scale: 2
+    })
+
+    const now = new Date()
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const timeStr = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
+    const fileName = `Sakhatype - ${dateStr} ${timeStr}.png`
+
+    const link = document.createElement('a')
+    link.href = canvas.toDataURL()
+    link.download = fileName
+    link.click()
+  } catch (error) {
+    console.error('Failed to save screenshot:', error)
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 
-<style scoped>
-.results {
-  text-align: center;
-  padding: 40px;
-  max-width: 1000px;
-  width: 100%;
-}
+<template>
+  <div ref="resultsRef" class="w-full max-w-6xl mx-auto space-y-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <Card>
+        <CardContent class="pt-6">
+          <div class="text-center">
+            <div :class="['text-4xl font-bold mb-1', isDark ? 'text-white' : 'text-gray-900']">
+              {{ Math.round(stats.wpm) }}
+            </div>
+            <div :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']">WPM</div>
+          </div>
+        </CardContent>
+      </Card>
 
-.results h2 {
-  font-size: 36px;
-  margin-bottom: 30px;
-  color: #000000;
-}
+      <Card>
+        <CardContent class="pt-6">
+          <div class="text-center">
+            <div :class="['text-4xl font-bold mb-1', isDark ? 'text-white' : 'text-gray-900']">
+              {{ Math.round(stats.accuracy) }}%
+            </div>
+            <div :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']">Точность</div>
+          </div>
+        </CardContent>
+      </Card>
 
-.chart-container {
-  height: 300px;
-  margin: 40px 0;
-}
+      <Card>
+        <CardContent class="pt-6">
+          <div class="text-center">
+            <div :class="['text-4xl font-bold mb-1', isDark ? 'text-white' : 'text-gray-900']">
+              {{ Math.round(stats.rawWpm) }}
+            </div>
+            <div :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']">Raw</div>
+          </div>
+        </CardContent>
+      </Card>
 
-.final-stats {
-  display: flex;
-  justify-content: center;
-  gap: 80px;
-  margin: 40px 0;
-}
+      <Card>
+        <CardContent class="pt-6">
+          <div class="text-center">
+            <div :class="['text-4xl font-bold mb-1', isDark ? 'text-white' : 'text-gray-900']">
+              {{ Math.round(stats.burstWpm) }}
+            </div>
+            <div :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']">Burst</div>
+          </div>
+        </CardContent>
+      </Card>
 
-.buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-top: 40px;
-}
+      <Card>
+        <CardContent class="pt-6">
+          <div class="text-center">
+            <div :class="['text-4xl font-bold mb-1', isDark ? 'text-white' : 'text-gray-900']">
+              {{ stats.totalErrors }}
+            </div>
+            <div :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']">Ошибки</div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
 
-.btn {
-  padding: 14px 35px;
-  font-size: 15px;
-  border: 2px solid #666666;
-  background: transparent;
-  color: #000000;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s;
-  font-family: inherit;
-}
+    <!-- Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- WPM Chart -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-lg">График WPM</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style="height: 250px">
+            <Line :data="wpmChartData" :options="chartOptions" />
+          </div>
+        </CardContent>
+      </Card>
 
-.btn:hover {
-  background: #000000;
-  border-color: #000000;
-  color: #ffffff;
-}
+      <!-- Accuracy Chart -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-lg">График точности</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style="height: 250px">
+            <Line :data="accuracyChartData" :options="chartOptions" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
 
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 42px;
-  font-weight: bold;
-  color: #000000;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #666666;
-  margin-top: 8px;
-  text-transform: lowercase;
-}
-</style>
+    <!-- Action Buttons -->
+    <div class="flex justify-center gap-3">
+      <Button @click="emit('restart')" size="lg" class="flex items-center gap-2">
+        <RotateCcw :size="18" />
+        <span>Еще раз</span>
+      </Button>
+      <Button
+        @click="saveScreenshot"
+        variant="outline"
+        size="lg"
+        class="flex items-center gap-2"
+        :disabled="isSaving"
+      >
+        <Share2 :size="18" />
+        <span>{{ isSaving ? 'Сохранение...' : 'Скриншот' }}</span>
+      </Button>
+    </div>
+  </div>
+</template>
