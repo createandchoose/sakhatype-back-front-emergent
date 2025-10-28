@@ -265,7 +265,7 @@ class SakhatypeAPITester:
             ("6. Save Test Result", self.test_save_result),
             ("7. Get User Results", self.test_get_user_results),
             ("8. Get User Profile", self.test_get_user_profile),
-            ("9. Leaderboard WPM", self.test_leaderboard_wmp),
+            ("9. Leaderboard WPM", self.test_leaderboard_wpm),
             ("10. Leaderboard Accuracy", self.test_leaderboard_accuracy)
         ]
         
