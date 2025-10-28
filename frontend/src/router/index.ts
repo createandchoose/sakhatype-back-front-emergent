@@ -6,6 +6,7 @@ import MainLayout from '@/layouts/Main.vue'
 import HomePage from '@/views/HomePage.vue'
 import Leaderboard from '@/views/Leaderboard.vue'
 import Profile from '@/views/Profile.vue'
+import Settings from '@/views/Settings.vue'
 
 // Роуты с возможностью динамических параметров
 const routes = [
@@ -27,6 +28,11 @@ const routes = [
         path: 'profile', // Динамический параметр filter (необязательный)
         name: 'Profile',
         component: Profile,
+      },
+      {
+        path: 'settings', // Settings page
+        name: 'Settings',
+        component: Settings,
       },
     ],
   },
