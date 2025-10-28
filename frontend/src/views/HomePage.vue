@@ -23,6 +23,8 @@ const showResults = ref(false)
 const currentLineIndex = ref(0)
 const textDisplayRef = ref<HTMLDivElement | null>(null)
 const lineOffset = ref(0)
+const wordsPerLine = ref<number[][]>([]) // Array of word indices for each line
+const visibleLines = ref<number[]>([0, 1, 2]) // Indices of the 3 visible lines
 
 // Функция анимации чисел как в GTA
 const animateNumber = (from: number, to: number) => {
