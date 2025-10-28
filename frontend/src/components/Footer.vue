@@ -44,8 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useTheme } from '@/composables/useTheme'
+import { useSound } from '@/shared/composables/useSound'
 import { Disc, Volume2, VolumeX, Palette } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -56,10 +56,5 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const { isDark, toggleDark } = useTheme()
-
-// Состояние звука
-const soundOn = ref(true)
-const toggleSound = () => {
-  soundOn.value = !soundOn.value
-}
+const { soundEnabled, toggleSound } = useSound()
 </script>
