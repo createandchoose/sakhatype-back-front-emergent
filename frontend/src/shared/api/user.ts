@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import { UserResponse } from './auth'
+import type { UserResponse } from './auth'
 
 export interface LeaderboardEntry {
   username: string
