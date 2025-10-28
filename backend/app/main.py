@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
 
-import models, schemas, crud
-from crud import authenticate_user
-from database import engine, get_db
-from auth import create_access_token, get_current_username
+from . import models, schemas, crud
+from .crud import authenticate_user
+from .database import engine, get_db
+from .auth import create_access_token, get_current_username
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
