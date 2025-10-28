@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, User, LogOut } from 'lucide-vue-next'
+import { Trophy, User, LogOut, Settings } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
-import { userApi } from '@/shared/api'
+import { useUserStore } from '@/stores/user'
 import LoginDialog from './LoginDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/shared/ui/badge'
@@ -18,22 +18,33 @@ import {
 
 const { isDark } = useTheme()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const router = useRouter()
-const userLevel = ref<number>(1)
+
+const userLevel = computed(() => userStore.profile?.level || 1)
+
+// Fetch profile when user is authenticated
+watch(
+  () => authStore.isAuthenticated,
+  async (isAuth) => {
+    if (isAuth && authStore.username) {
+      await userStore.fetchProfile(authStore.username)
+    } else {
+      userStore.clearProfile()
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   if (authStore.isAuthenticated && authStore.username) {
-    try {
-      const profile = await userApi.getUserProfile(authStore.username)
-      userLevel.value = profile.level
-    } catch (error) {
-      console.error('Failed to load user profile:', error)
-    }
+    await userStore.fetchProfile(authStore.username)
   }
 })
 
 const handleLogout = () => {
   authStore.logout()
+  userStore.clearProfile()
   router.push('/')
 }
 </script>
@@ -73,6 +84,10 @@ const handleLogout = () => {
           <DropdownMenuItem @click="router.push('/profile')" class="cursor-pointer">
             <User :size="16" class="mr-2" />
             <span>Профиль</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem @click="router.push('/settings')" class="cursor-pointer">
+            <Settings :size="16" class="mr-2" />
+            <span>Настройки</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="handleLogout" class="cursor-pointer text-red-600">
