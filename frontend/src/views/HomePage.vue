@@ -197,31 +197,8 @@ const handleInput = (event: Event) => {
 }
 
 const updateLineOffset = () => {
-  // Получаем все слова до текущего
-  const wordsBeforeCurrent = store.words.slice(0, store.currentWordIndex + 1).join(' ')
-
-  // Создаём временный элемент для измерения
-  const tempDiv = document.createElement('div')
-  tempDiv.style.cssText = `
-    position: absolute;
-    visibility: hidden;
-    width: ${textDisplayRef.value?.offsetWidth || 800}px;
-    font-size: 1.875rem;
-    font-family: monospace;
-    line-height: 2.5rem;
-  `
-  tempDiv.textContent = wordsBeforeCurrent
-  document.body.appendChild(tempDiv)
-
-  const height = tempDiv.offsetHeight
-  document.body.removeChild(tempDiv)
-
-  // Высота одной строки примерно 2.5rem (40px)
-  const lineHeight = 40
-  const currentLine = Math.floor(height / lineHeight)
-
-  // Смещаем так, чтобы текущая строка была на второй позиции (в центре)
-  lineOffset.value = -(currentLine - 1) * lineHeight
+  // This function is no longer needed with the 3-line approach
+  // Keeping it as a placeholder in case it's called elsewhere
 }
 
 const getCharClass = (wordIdx: number, charIdx: number): string => {
