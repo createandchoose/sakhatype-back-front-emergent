@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Path
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -18,7 +18,7 @@ def get_leaderboard_accuracy(limit: int = 100, db: Session = Depends(get_db)):
 
 @router.get('/time-mode/{time_mode}', response_model=List[TimeModeLeaderboardEntry])
 def get_leaderboard_by_time_mode(
-    time_mode: int = Query(..., description="Time mode: 15 or 60 seconds"),
+    time_mode: int = Path(..., description="Time mode: 15 or 60 seconds"),
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
@@ -27,7 +27,7 @@ def get_leaderboard_by_time_mode(
 
 @router.get('/daily/time-mode/{time_mode}', response_model=List[TimeModeLeaderboardEntry])
 def get_daily_leaderboard_by_time_mode(
-    time_mode: int = Query(..., description="Time mode: 15 or 60 seconds"),
+    time_mode: int = Path(..., description="Time mode: 15 or 60 seconds"),
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
