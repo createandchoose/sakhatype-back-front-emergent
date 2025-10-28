@@ -11,8 +11,8 @@
         variant="outline"
         @click="toggleSound"
       >
-        <component :is="soundOn ? Volume2 : VolumeX" :size="14" />
-        <span>{{ soundOn ? 'Вкл' : 'Выкл' }}</span>
+        <component :is="soundEnabled ? Volume2 : VolumeX" :size="14" />
+        <span>{{ soundEnabled ? 'Вкл' : 'Выкл' }}</span>
       </Button>
 
       <DropdownMenu>
