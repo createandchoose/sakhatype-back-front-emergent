@@ -2,12 +2,14 @@
 import { ref, watch, onMounted, onUnmounted, computed, type Ref } from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
+import { useSound } from '@/shared/composables/useSound'
 import { useControlStore } from '@/stores/control'
 import { useTypingStore } from '@/stores/typingStore.ts'
 import Control from '@/components/Control.vue'
 import ResultsView from '@/components/ResultsView.vue'
 
 const { isDark } = useTheme()
+const { playKeypress, playCorrect, playIncorrect } = useSound()
 const control = useControlStore()
 const store = useTypingStore()
 
