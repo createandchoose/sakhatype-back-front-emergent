@@ -344,33 +344,70 @@ onUnmounted(() => {
   transform: rotate(-260deg);
 }
 
-.char-current::after {
+/* Monkeytype-style cursor */
+.char-cursor::before {
   content: '';
   position: absolute;
-  left: -1px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
+  left: -2px;
+  top: 2px;
+  bottom: 2px;
+  width: 2.5px;
   background: currentColor;
-  animation: blink 1s infinite;
+  animation: blink-smooth 1s infinite;
+  border-radius: 2px;
 }
 
-@keyframes blink {
-  0%,
-  49% {
+@keyframes blink-smooth {
+  0%, 49% {
     opacity: 1;
   }
-  50%,
-  100% {
+  50%, 100% {
     opacity: 0;
   }
 }
 
+/* Active word styling (like monkeytype) */
+.word-active {
+  opacity: 1;
+}
+
 .word {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+/* Incorrect character wobble */
+.char-incorrect {
+  animation: wobble 0.1s ease-in-out;
+}
+
+@keyframes wobble {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* Extra characters styling */
+.extra-char {
+  opacity: 0.8;
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 2px;
 }
 
 .char {
   letter-spacing: 0.05em;
+  position: relative;
+  padding: 2px 0;
+}
+
+/* Smooth scrolling for text */
+.text-display-wrapper {
+  position: relative;
 }
 </style>
