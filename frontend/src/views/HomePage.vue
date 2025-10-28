@@ -82,6 +82,68 @@ const restartTest = () => {
   inputValue.value = ''
   showResults.value = false
   lineOffset.value = 0
+  calculateWordsPerLine()
+  visibleLines.value = [0, 1, 2]
+  currentLineIndex.value = 0
+}
+
+// Calculate which words belong to each line
+const calculateWordsPerLine = () => {
+  const containerWidth = textDisplayRef.value?.offsetWidth || 800
+  const words = store.words
+  const lines: number[][] = []
+  let currentLine: number[] = []
+  let currentWidth = 0
+  
+  // Approximate character width for monospace font at text-3xl (1.875rem)
+  const charWidth = 18 // pixels per character at this font size
+  const spaceWidth = 10 // space between words
+  
+  words.forEach((word, index) => {
+    const wordWidth = word.length * charWidth + spaceWidth
+    
+    if (currentWidth + wordWidth > containerWidth && currentLine.length > 0) {
+      // Start new line
+      lines.push([...currentLine])
+      currentLine = [index]
+      currentWidth = wordWidth
+    } else {
+      currentLine.push(index)
+      currentWidth += wordWidth
+    }
+  })
+  
+  // Push the last line
+  if (currentLine.length > 0) {
+    lines.push(currentLine)
+  }
+  
+  wordsPerLine.value = lines
+}
+
+// Get the line index for a given word index
+const getLineForWord = (wordIndex: number): number => {
+  for (let i = 0; i < wordsPerLine.value.length; i++) {
+    if (wordsPerLine.value[i].includes(wordIndex)) {
+      return i
+    }
+  }
+  return 0
+}
+
+// Update visible lines when user progresses
+const updateVisibleLines = () => {
+  const lineIndex = getLineForWord(store.currentWordIndex)
+  
+  // Keep current line in the middle (index 1 of visible lines)
+  if (lineIndex > currentLineIndex.value) {
+    currentLineIndex.value = lineIndex
+    visibleLines.value = [
+      Math.max(0, lineIndex - 1),
+      lineIndex,
+      Math.min(wordsPerLine.value.length - 1, lineIndex + 1)
+    ]
+  }
 }
 
 const focusInput = () => {
