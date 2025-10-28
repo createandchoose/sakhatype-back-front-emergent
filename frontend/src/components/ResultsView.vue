@@ -58,6 +58,7 @@ const emit = defineEmits<{
 
 const { isDark } = useTheme()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const router = useRouter()
 const { playComplete } = useSound()
 const resultsRef = ref<HTMLElement | null>(null)
@@ -82,6 +83,11 @@ async function saveResult() {
       test_duration: props.stats.testDuration,
       consistency: props.stats.consistency
     })
+    
+    // Refresh user profile to update level in header
+    if (authStore.username) {
+      await userStore.refreshProfile(authStore.username)
+    }
   } catch (error) {
     console.error('Failed to save result:', error)
   }
