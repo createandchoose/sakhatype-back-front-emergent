@@ -230,7 +230,7 @@ const openLogoutDialog = () => {
                 </span>
               </Alert>
 
-              <Alert class="flex items-center justify-between gap-2 p-1 px-3 w-full">
+              <!-- <Alert class="flex items-center justify-between gap-2 p-1 px-3 w-full">
                 <div class="flex items-center gap-2">
                   <Target :size="20" :class="isDark ? 'text-gray-400' : 'text-gray-600'" />
                   <span :class="['text-sm', isDark ? 'text-gray-400' : 'text-gray-600']"
@@ -240,7 +240,7 @@ const openLogoutDialog = () => {
                 <span :class="['text-lg font-bold', isDark ? 'text-white' : 'text-gray-900']">
                   {{ Math.round(profile.best_accuracy) }}%
                 </span>
-              </Alert>
+              </Alert> -->
             </div>
           </CardContent>
         </Card>

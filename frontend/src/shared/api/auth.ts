@@ -35,7 +35,7 @@ export const authApi = {
     formData.append('username', username)
     formData.append('password', password)
 
-    const response = await fetch(`${apiClient['API_URL'] || 'http://localhost:8080'}/api/auth/login`, {
+    const response = await fetch(`${apiClient['API_URL'] || 'http://localhost:8001'}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
